@@ -95,7 +95,7 @@ def compute_dissimilarity(G):
 
 def collect_frames(G, Delta,
                    T_max=2.0, T_min=0.25,
-                   alpha=0.85, R=3,
+                   alpha=0.5, R=2,
                    N_min=2, N_max=None,
                    max_frames=100,
                    seed=42):
@@ -404,12 +404,14 @@ def build_animation(frames, G, pos, T_max, T_min, interval_ms=600):
 
 def main():
     parser = argparse.ArgumentParser(description='Animação do algoritmo SADI')
-    parser.add_argument('--output', default='sadi_animation.gif',
-                        help='Arquivo de saída (padrão: sadi_animation.gif)')
+    parser.add_argument('--output', default='images/sadi_animation.gif',
+                        help='Arquivo de saída (padrão: images/sadi_animation.gif)')
     parser.add_argument('--show', action='store_true',
                         help='Exibir janela interativa em vez de salvar')
-    parser.add_argument('--fps', type=int, default=2,
-                        help='Frames por segundo (padrão: 2)')
+    parser.add_argument('--fps', type=float, default=1,
+                        help='Frames por segundo (padrão: 1)')
+    parser.add_argument('--interval-ms', type=int, default=None,
+                        help='Tempo por frame em ms (substitui --fps; padrão: None)')
     parser.add_argument('--max-frames', type=int, default=80,
                         help='Máximo de frames a capturar (padrão: 80)')
     parser.add_argument('--seed', type=int, default=42,
@@ -420,7 +422,7 @@ def main():
                         help='Número de comunidades no grafo de teste (padrão: 4)')
     args = parser.parse_args()
 
-    T_MAX, T_MIN = 2.0, 0.25
+    T_MAX, T_MIN = 0.5, 0.01
 
     print('Gerando grafo de teste...')
     G, _ = make_test_graph(n_per_comm=args.n_per_comm,
@@ -436,21 +438,28 @@ def main():
     print('Executando SADI e coletando frames...')
     frames = collect_frames(G, Delta,
                             T_max=T_MAX, T_min=T_MIN,
-                            alpha=0.85, R=3,
+                            alpha=0.5, R=2,
                             max_frames=args.max_frames,
                             seed=args.seed)
     print(f'  {len(frames)} frames coletados.')
 
     print('Construindo animação...')
+    if args.interval_ms is not None:
+        interval_ms = args.interval_ms
+        fps_out = 1000 / interval_ms
+    else:
+        fps_out = args.fps
+        interval_ms = int(1000 / fps_out)
+
     fig, anim = build_animation(frames, G, pos,
                                 T_max=T_MAX, T_min=T_MIN,
-                                interval_ms=1000 // args.fps)
+                                interval_ms=interval_ms)
 
     if args.show:
         plt.show()
     else:
-        print(f'Salvando em "{args.output}" ({args.fps} fps)...')
-        anim.save(args.output, writer=PillowWriter(fps=args.fps), dpi=110)
+        print(f'Salvando em "{args.output}" ({fps_out:.2f} fps, {interval_ms}ms/frame)...')
+        anim.save(args.output, writer=PillowWriter(fps=fps_out), dpi=110)
         print('Concluído.')
 
     plt.close(fig)
