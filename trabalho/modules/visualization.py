@@ -8,7 +8,8 @@ from scipy.optimize import linear_sum_assignment
 def plot_communities(G, labels, centers, title="Detecção de Comunidades — SADI", save_path=None):
     pos = nx.spring_layout(G, seed=42)
     n_communities = len(set(labels))
-    colors = cm.Set1(np.linspace(0, 1, n_communities))
+    cmap = cm.tab20 if n_communities > 9 else cm.Set1
+    colors = cmap(np.linspace(0, 1, n_communities))
 
     plt.figure(figsize=(10, 7))
     for k in range(n_communities):
@@ -77,7 +78,8 @@ def plot_comparison(G, true_labels, pred_labels, centers,
         (axes[1], pred_labels, title_pred + (f"\nARI = {ari:.4f}" if ari is not None else ""), True),
     ]:
         n_comm = len(set(labels))
-        colors = cm.Set1(np.linspace(0, 1, n_comm))
+        cmap = cm.tab20 if n_comm > 9 else cm.Set1
+        colors = cmap(np.linspace(0, 1, n_comm))
         for k in range(n_comm):
             node_list = [v for v in G.nodes() if labels[v] == k]
             nx.draw_networkx_nodes(G, pos, nodelist=node_list,
